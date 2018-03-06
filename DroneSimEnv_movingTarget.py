@@ -204,7 +204,7 @@ class DroneSimEnv(gym.Env):
             logger.info('hunter action: {},{},{},{}'.format(self.test_roll_hunter, self.test_pitch_hunter, self.test_yaw_hunter, self.test_thrust_hunter))
 
             self.flag = True # force program to terminate
-            raise ValueError
+            # raise ValueError
             return self.state
         
         self.prev_pos_hunter = position_hunter
@@ -229,10 +229,12 @@ class DroneSimEnv(gym.Env):
         '''
         relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
         target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front else None
-        
         self.distance = np.linalg.norm(position_hunter - position_target)
         # get distance within hunter and target
         distance = np.array([self.distance / self.max_initial_distance])  
+        
+        if not target_in_front:
+            print(target_coordinate_in_view, self.coordinate_queue)
 
         # maintain a 8-length deque
         if self.coordinate_queue is None and self.distance_queue is None:
