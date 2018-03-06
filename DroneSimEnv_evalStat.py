@@ -36,8 +36,8 @@ class DroneSimEnv(gym.Env):
         self.min_detect_distance, self.max_detect_distance = 1, 30
 
         self.max_absolute_angle = 180
-        self.max_roll_angle = 45
-        self.max_pitch_angle = 40
+        self.max_roll_angle = 180
+        self.max_pitch_angle = 180
         self.max_yaw_angle = 180
 
         #self.max_absolute_thrust = 2 * self.mass_hunter * self.gravity
@@ -119,8 +119,8 @@ class DroneSimEnv(gym.Env):
         roll, pitch, yaw, thrust = action[0], action[1], action[2], action[3]
 
         # update hunter
-        dronesim.simcontrol([roll, pitch, yaw, thrust])
-        dronesim.simrun(int(1e9 / self.fps))   #transform from second to nanoseconds
+        # dronesim.simcontrol([roll, pitch, yaw, thrust])
+        dronesim.simrun(int(1e9 / self.fps), [roll, pitch, yaw, thrust])   #transform from second to nanoseconds
         
         # update state
         self.state = self.get_state()
@@ -211,6 +211,9 @@ class DroneSimEnv(gym.Env):
         orientation_target = np.matrix([0.0, 0.0, 0.0]) # roll, pitch, yaw
 
         (absolute_x, absolute_y), _ = projection(position_target, position_hunter, orientation_hunter, w=float(self.width), h=float(self.height)) 
+        
+        print('x,y: ', absolute_x, absolute_y)
+        
         distance = np.linalg.norm(position_hunter - position_target)
         # invalid initialization
         while (absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
@@ -219,7 +222,7 @@ class DroneSimEnv(gym.Env):
             distance = np.linalg.norm(position_hunter - position_target)
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 2)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 10)
         
         self.previous_distance = distance
         self.state = self.get_state()

@@ -36,8 +36,8 @@ class DroneSimEnv(gym.Env):
         self.min_detect_distance, self.max_detect_distance = 1, 30
 
         self.max_absolute_angle = 180
-        self.max_roll_angle = 45
-        self.max_pitch_angle = 40
+        self.max_roll_angle = 180
+        self.max_pitch_angle = 180
         self.max_yaw_angle = 180
 
         #self.max_absolute_thrust = 2 * self.mass_hunter * self.gravity
@@ -118,10 +118,10 @@ class DroneSimEnv(gym.Env):
     def step(self, action):
         roll, pitch, yaw, thrust = action[0], action[1], action[2], action[3]
         # print('norm: ', roll, pitch, yaw) 
-        _, ori_hunter, _, pos_target, ori_target, _, _ = dronesim.siminfo()
+        # _, ori_hunter, _, pos_target, ori_target, _, _ = dronesim.siminfo()
         
-        roll_target, pitch_target, yaw_target = ori_target[0], ori_target[1], ori_target[2]
-        print('target: ', roll_target, pitch_target, yaw_target)
+        # roll_target, pitch_target, yaw_target = ori_target[0], ori_target[1], ori_target[2]
+        # print('target: ', roll_target, pitch_target, yaw_target)
         # print('hunter: ', ori_hunter[0], ori_hunter[1], ori_hunter[2])
         # print('diff: ', ori_hunter[0] - roll_target, ori_hunter[1] - pitch_target, ori_hunter[2] - yaw_target)
         if self.iteration % 20 == 0:
@@ -129,11 +129,11 @@ class DroneSimEnv(gym.Env):
             self.pitch_target = min(max(self.pitch_target + 0.33 * np.random.randn(), -1), 1)
             self.yaw_target = min(max(self.yaw_target + 0.33 * np.random.randn(), -1), 1)
             self.thrust_target = min(max(self.thrust_target + 0.33 * np.random.randn(), -1), 1)
-        print('norm_target: ', self.roll_target, self.pitch_target, self.yaw_target)
+        # print('norm_target: ', self.roll_target, self.pitch_target, self.yaw_target)
 
         # update hunter
-        dronesim.simcontrol([roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])
-        dronesim.simrun(int(1e9 / self.fps))   #transform from second to nanoseconds
+        # dronesim.simcontrol([roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])
+        dronesim.simrun(int(1e9 / self.fps), [roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])   #transform from second to nanoseconds
         
         # update state
         self.state = self.get_state()
@@ -141,6 +141,8 @@ class DroneSimEnv(gym.Env):
         # calculate reward and check if done
         reward = (self.previous_distance - self.distance) * 500 # even if chasing at max speed, the reward will be 10 / 100 * 500 = 50
         self.previous_distance = self.distance
+
+        print('reward: ', reward)
 
         done = False
         reason = None
@@ -233,7 +235,7 @@ class DroneSimEnv(gym.Env):
             distance = np.linalg.norm(position_hunter - position_target)
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 2)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5)
         
         self.previous_distance = distance
         self.state = self.get_state()

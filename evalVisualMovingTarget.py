@@ -17,6 +17,7 @@ def actiongenerator(obs):
     # print(action[0], action[1],action[2],action[3])
     # print('----------------------------------------')
     return action
+    # return [0, 0, 0, 0]
 
 env = DroneSimEnv()
 itetime = 1000
@@ -86,7 +87,7 @@ with U.single_threaded_session() as sess:
         obs = env.reset()
 
         saver = tf.train.Saver()
-        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_mv_exp1/Exp1_MVT_best')
+        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_mv_exp4/Exp4_mv_best')
 
         done = False
         step = 0

@@ -5,6 +5,7 @@ from gym import spaces
 from gym.utils import seeding
 import numpy as np
 
+from baselines import logger
 from projection import *
 from collections import deque
 
@@ -36,8 +37,8 @@ class DroneSimEnv(gym.Env):
         self.min_detect_distance, self.max_detect_distance = 1, 30
 
         self.max_absolute_angle = 180
-        self.max_roll_angle = 45
-        self.max_pitch_angle = 40
+        self.max_roll_angle = 180
+        self.max_pitch_angle = 180
         self.max_yaw_angle = 180
 
         #self.max_absolute_thrust = 2 * self.mass_hunter * self.gravity
@@ -125,10 +126,19 @@ class DroneSimEnv(gym.Env):
             self.thrust_target = min(max(self.thrust_target + 0.33 * np.random.randn(), -1), 1)
 
         # update hunter
-        dronesim.simcontrol([roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])
+        # dronesim.simcontrol([roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])
 
-        dronesim.simrun(int(1e9 / self.fps))   #transform from second to nanoseconds
+        dronesim.simrun(int(1e9 / self.fps), [roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])   #transform from second to nanoseconds
         
+        #####################
+
+        self.test_roll_hunter = roll
+        self.test_pitch_hunter = pitch
+        self.test_yaw_hunter = yaw
+        self.test_thrust_hunter = thrust
+
+        #####################
+
         # update state
         self.state = self.get_state()
 
@@ -144,12 +154,20 @@ class DroneSimEnv(gym.Env):
             self.episodes += 1
             self.iteration = 0
 
+        # reward -= (abs(self.coordinate_queue[-1][0] - 0.5) + abs(self.coordinate_queue[-1][1] - 0.5)) * 20
+
         if self.distance > self.max_detect_distance or self.distance < self.min_detect_distance or self.iteration > self.max_iteration:
             done = True
             reward = 0
             self.episodes += 1
             self.iteration = 0
             if self.distance < self.min_detect_distance: reward = 200
+            if self.iteration > self.max_iteration: reward = 0
+        
+        if self.flag:
+            done = True
+            reward = 0
+            self.iteration = 0
 
         # control parameter
         self.iteration += 1
@@ -160,15 +178,55 @@ class DroneSimEnv(gym.Env):
 
     def get_state(self):
         position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter = dronesim.siminfo()
+        self.flag = False
         try:
             (absolute_x, absolute_y), _ = projection(np.matrix(position_target), np.matrix(position_hunter), np.matrix(orientation_hunter), w=float(self.width), h=float(self.height))
         except ValueError:
-            print('hunter position: ', position_hunter)
-            print('target position: ', position_target)
-            print('hunter orientation: ', orientation_hunter)
-            self.distance = 100 # force program to terminate
-            return self.state
+            logger.info('###########################################')
+            logger.info('episodes: {}, iteration: {}'.format(self.episodes, self.iteration))
+            logger.info('prev pos hunter: {}'.format(self.prev_pos_hunter))
+            logger.info('prev ori hunter: {}'.format(self.prev_ori_hunter))
+            logger.info('prev pos target: {}'.format(self.prev_pos_target))
+            logger.info('prev ori target: {}'.format(self.prev_ori_target))
+            logger.info('prev acc hunter: {}'.format(self.prev_acc_hunter))
+            logger.info('prev acc target: {}'.format(self.prev_acc_target))
+            logger.info('prev thrust hunter: {}'.format(self.prev_thrust_hunter))
+            logger.info('hunter position: {}'.format(position_hunter))
+            logger.info('hunter ori: {}'.format(orientation_hunter))
+            logger.info('target position: {}'.format(position_target))
+            logger.info('target ori: {}'.format(orientation_target))
+            logger.info('hunter acc: {}'.format(acc_hunter))
+            logger.info('target acc: {}'.format(acc_target))
+            logger.info('thrust hunter: {}'.format(thrust_hunter))
+            logger.info('init pos target: {}'.format(self.init_pos_target))
 
+            logger.info('target action: {},{},{},{}'.format(self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target))
+            logger.info('hunter action: {},{},{},{}'.format(self.test_roll_hunter, self.test_pitch_hunter, self.test_yaw_hunter, self.test_thrust_hunter))
+
+            self.flag = True # force program to terminate
+            raise ValueError
+            return self.state
+        
+        self.prev_pos_hunter = position_hunter
+        self.prev_ori_hunter = orientation_hunter
+        self.prev_pos_target = position_target
+        self.prev_ori_target = orientation_target
+        self.prev_acc_hunter = acc_hunter
+        self.prev_acc_target = acc_target
+        self.prev_thrust_hunter = thrust_hunter
+        '''
+        if (1 + self.iteration) % 200 == 0:
+            logger.info('episodes: {},iteration: {}'.format(self.episodes, self.iteration))
+            logger.info('pos hunter: {}'.format(position_hunter))
+            logger.info('pos target: {}'.format(position_target))
+            logger.info('ori hunter: {}'.format(orientation_hunter))
+            logger.info('ori target: {}'.format(orientation_target))
+            logger.info('acc hunter: {}'.format(acc_hunter))
+            logger.info('acc target: {}'.format(acc_target))
+            logger.info('thrust hunter: {}'.format(thrust_hunter))
+            logger.info('target action: {},{},{},{}'.format(self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target))
+            logger.info('hunter action: {},{},{},{}'.format(self.test_roll_hunter, self.test_pitch_hunter, self.test_yaw_hunter, self.test_thrust_hunter))
+        '''
         relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
         target_coordinate_in_view = np.array((relative_x, relative_y)).flatten()
         
@@ -222,8 +280,10 @@ class DroneSimEnv(gym.Env):
             distance = np.linalg.norm(position_hunter - position_target)
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 2)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5)
         
+        self.init_pos_target = position_target
+
         self.previous_distance = distance
         self.state = self.get_state()
 

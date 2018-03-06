@@ -1,4 +1,4 @@
-import cv2
+
 from math import sin, cos, radians, degrees, atan, sqrt
 import numpy as np
 
@@ -136,50 +136,3 @@ def get_o_from_pts(t, c):
     return np.matrix([degrees(roll), degrees(pitch) - 90, degrees(yaw)])
 
 
-def projection2(t, c, o, w=1920.0, h=1080.0, f=None):
-    z = float(t.item(0) - c.item(0))
-    x = float(t.item(1) - c.item(1))
-    y = float(t.item(2) - c.item(2))
-    oZ = radians(-o.item(0))
-    oX = radians(-o.item(1))
-    oY = radians(-o.item(2))
-
-    # dist_coef = np.matrix([-0.000591, 0.000519, 0.000001, -0.000030, 0.000000])
-    dist_coef = np.zeros(4)
-    # rvec = i*j*k
-    # rvec = np.eye(3)
-    tvec = np.matrix([x, y, z])
-    R = rot_mat(oX, oY, oZ)
-    rvec, jacobian = cv2.Rodrigues(R)
-    cameraMatrix = np.float64([[w / 2, 0, w / 2],
-                               [0, w / 2, h / 2],
-                               [0.0, 0.0, 1.0]])
-
-    O_vec = np.zeros((1, 3))
-    '''
-    t_ = np.zeros((1,3))
-    t_[0][0] = t.item(1)
-    t_[0][1] = t.item(2)
-    t_[0][2] = t.item(0)
-    c_ = np.zeros((1,3))
-    c_[0][0] = c.item(1)
-    c_[0][1] = c.item(2)
-    c_[0][2] = c.item(0)
-    tvec = t_ - np.dot(c_,R)
-    '''
-    tvec = np.zeros((1, 3))
-    tvec[0][0] = x
-    tvec[0][1] = y
-    tvec[0][2] = z
-    # tvec = np.float64(t-c)
-    pts = cv2.projectPoints(np.matrix([x, y, z]), rvec, O_vec, cameraMatrix, dist_coef)
-    # print(pts[0])
-    u = pts[0][0][0][0]
-    v = pts[0][0][0][1]
-    return (int(round(u)), int(round(v)))
-
-
-#t = np.matrix([5.0, 5.0, 5.0])
-#c = np.matrix([0,0,0])
-#o = np.matrix([0,0,0])
-#print(projection(t, c, o))

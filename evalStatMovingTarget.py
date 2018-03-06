@@ -66,7 +66,7 @@ agent = DDPG(actor, critic, memory, env.observation_space.shape, env.action_spac
     actor_lr=actor_lr, critic_lr=critic_lr, enable_popart=popart, clip_norm=clip_norm,
     reward_scale=reward_scale)
 
-max_iteration = 50
+max_iteration = 200
 step_number = []
 success = []
 reason = {1:0, 2:0, 3:0}
@@ -83,7 +83,7 @@ with U.single_threaded_session() as sess:
         obs = env.reset()
 
         saver = tf.train.Saver()
-        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_mv_exp1/Exp1_MVT_best')
+        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_mv_no_punishment/model_mv_exp3/Exp3_MVT_best')
 
         done = False
         step = 0
