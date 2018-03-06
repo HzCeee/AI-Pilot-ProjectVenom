@@ -147,7 +147,7 @@ class DroneSimEnv(gym.Env):
         self.previous_distance = self.distance
 
         done = False
-        is_in_view = [ (self.min_relative_x < coordinate[0] < self.max_relative_x and self.min_relative_y < coordinate[1] < self.max_relative_y) if coordinate else False for coordinate in self.coordinate_queue]
+        is_in_view = [ (self.min_relative_x < coordinate[0] < self.max_relative_x and self.min_relative_y < coordinate[1] < self.max_relative_y) if coordinate is not None else False for coordinate in self.coordinate_queue]
         if True not in is_in_view:
             done = True
             reward = 0
