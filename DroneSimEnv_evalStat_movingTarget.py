@@ -177,7 +177,7 @@ class DroneSimEnv(gym.Env):
     def get_state(self):
         position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter = dronesim.siminfo()
         
-        print('ori: ', orientation_hunter)
+        # print('ori: ', orientation_hunter)
 
         orientation_hunter = math.degrees(orientation_hunter)
         orientation_target = math.degrees(orientation_target)
@@ -191,7 +191,7 @@ class DroneSimEnv(gym.Env):
         relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
         target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front and self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y else np.array((None, None))
         
-        # print('####')
+        print('####')
         print(position_hunter, orientation_hunter, position_target)
         print(absolute_x, absolute_y)
         print(target_in_front, target_coordinate_in_view)
