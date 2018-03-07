@@ -204,7 +204,7 @@ class DroneSimEnv(gym.Env):
             logger.info('hunter action: {},{},{},{}'.format(self.test_roll_hunter, self.test_pitch_hunter, self.test_yaw_hunter, self.test_thrust_hunter))
 
             self.flag = True # force program to terminate
-            raise ValueError
+            # raise ValueError
             return self.state
         
         self.prev_pos_hunter = position_hunter
