@@ -179,8 +179,8 @@ class DroneSimEnv(gym.Env):
         
         print('ori: ', orientation_hunter)
 
-        orientation_hunter = math.degrees(orientation_hunter)
-        orientation_target = math.degrees(orientation_target)
+        orientation_hunter = [math.degrees(degree) for degree in orientation_hunter]
+        orientation_target = [math.degrees(degree) for degree in orientation_target]
         
         try:        
             (absolute_x, absolute_y), target_in_front = projection(np.matrix(position_target), np.matrix(position_hunter), np.matrix(orientation_hunter), w=float(self.width), h=float(self.height)) 
