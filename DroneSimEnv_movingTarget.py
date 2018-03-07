@@ -228,7 +228,7 @@ class DroneSimEnv(gym.Env):
             logger.info('hunter action: {},{},{},{}'.format(self.test_roll_hunter, self.test_pitch_hunter, self.test_yaw_hunter, self.test_thrust_hunter))
         '''
         relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
-        target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front else np.array((None, None))
+        target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front and self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y else np.array((None, None))
         
         self.distance = np.linalg.norm(position_hunter - position_target)
         # get distance within hunter and target
