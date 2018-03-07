@@ -161,6 +161,10 @@ class DroneSimEnv(gym.Env):
 
     def get_state(self):
         position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter = dronesim.siminfo()
+        
+        orientation_hunter = math.degrees(orientation_hunter)
+        orientation_target = math.degrees(orientation_target)
+
         try:        
             (absolute_x, absolute_y), _ = projection(np.matrix(position_target), np.matrix(position_hunter), np.matrix(orientation_hunter), w=float(self.width), h=float(self.height)) 
         except ValueError:
