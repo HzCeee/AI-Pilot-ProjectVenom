@@ -169,11 +169,11 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                             eval_episode_rewards_history.append(eval_episode_reward)
                             eval_episode_reward = 0.
             
-            saver.save(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model/Exp2_mv')
+            saver.save(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model/Exp4_mv')
             
             if np.mean(roll_success_rate) > max_success_rate:
                 max_success_rate = np.mean(roll_success_rate)
-                saver.save(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model/Exp2_mv_best')
+                saver.save(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model/Exp4_mv_best')
 
             mpi_size = MPI.COMM_WORLD.Get_size()
             # Log stats.

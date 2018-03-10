@@ -146,7 +146,7 @@ class DroneSimEnv(gym.Env):
 
         done = False
         reason = None
-        is_in_view = [ (self.min_relative_x < coordinate[0] < self.max_relative_x and self.min_relative_y < coordinate[1] < self.max_relative_y) if coordinate[0] is not None else False for coordinate in self.coordinate_queue]
+        is_in_view = [ (self.min_relative_x < coordinate[0] < self.max_relative_x and self.min_relative_y < coordinate[1] < self.max_relative_y) if coordinate[0] != -1 else False for coordinate in self.coordinate_queue]
         '''
         if True not in is_in_view:
             done = True
@@ -154,6 +154,9 @@ class DroneSimEnv(gym.Env):
             self.episodes += 1
             self.iteration = 0
         '''
+
+        reward -= 20*(abs(self.coordinate_queue[-1][0] - 0.5) + abs(self.coordinate_queue[-1][1] - 0.5)) if self.coordinate_queue[-1][0] is not None else 20
+
         if self.distance > self.max_detect_distance or self.distance < self.min_detect_distance or self.iteration > 100000:
             done = True
             reward = 0
@@ -189,12 +192,12 @@ class DroneSimEnv(gym.Env):
             return self.state
 
         relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
-        target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front and self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y else np.array((None, None))
+        target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front and self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y else np.array((-1, -1))
         
-        print('####')
+        print('!!!!####')
         print(position_hunter, orientation_hunter, position_target)
-        print(absolute_x, absolute_y)
-        print(target_in_front, target_coordinate_in_view)
+        print(0 < absolute_x < 256, 0 < absolute_y < 144, target_in_front)
+        print(target_coordinate_in_view)
 
         self.distance = np.linalg.norm(position_hunter - position_target)
         # get distance within hunter and target
@@ -230,7 +233,7 @@ class DroneSimEnv(gym.Env):
     def reset(self):
         # state related property
         position_hunter = np.matrix([0.0, 0.0, 10.0]) # x, y, z
-        orientation_hunter = np.matrix([0.0, 0.0, 180.0]) # roll, pitch, taw
+        orientation_hunter = np.matrix([0.0, 0.0, 0.0]) # roll, pitch, taw
 
         #the position of target is generated randomly and should not exceed the vision range of hunter
         position_target = np.matrix([10.0, 0.0, 10.0]) + np.random.normal(0, 5) # x, y, z
@@ -240,12 +243,12 @@ class DroneSimEnv(gym.Env):
         (absolute_x, absolute_y), target_in_front = projection(position_target, position_hunter, orientation_hunter, w=float(self.width), h=float(self.height)) 
         distance = np.linalg.norm(position_hunter - position_target)
         # invalid initialization
-        while (absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
+        while (not target_in_front or absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
             position_target = np.matrix([10.0, 0.0, 10.0]) + np.random.normal(0, 5)
             (absolute_x, absolute_y), target_in_front = projection(position_target, position_hunter, orientation_hunter, w=float(self.width), h=float(self.height)) 
             distance = np.linalg.norm(position_hunter - position_target)
         
-        print(position_hunter, orientation_hunter, position_target)
+        # print(position_hunter, orientation_hunter, position_target)
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
                          np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5)

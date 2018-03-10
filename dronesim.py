@@ -20,6 +20,11 @@ class infoformat(Structure):
     ("thrust",c_double)\
         ]
 
+class imagecoor(Structure):
+    _fields_ = [\
+    ("u",c_double),("v",c_double)]
+
+
 #windows version interface 
 dronesimapi = CDLL('./drone_sim.so')
 
@@ -36,6 +41,12 @@ dronesimapi.simrun.argtype  = [c_double,c_double,c_double,\
 #set output type
 dronesimapi.siminfo.restype = POINTER(infoformat)
 
+
+dronesimapi.simprojection.argtype = [c_double,c_double,c_double,c_double,c_double,c_double,\
+                                     c_double,c_double,c_double,\
+                                     c_double,c_double]
+
+dronesimapi.simprojection.restype = POINTER(imagecoor)
 
 #interface warper:
 def siminit(pos_hunter, ori_hunter, pos_target, ori_target,speed_upbound_hunter,speed_upbound_target):
@@ -71,6 +82,14 @@ def siminfo():
     
     return pos_hunter,ori_hunter,acc_hunter,pos_target,ori_target,acc_target,outinfo.contents.thrust
 
+def projection(pos_hunter,ori_hunter,pos_target,screen_width,screen_height):
+    outcoor = dronesimapi.simprojection(c_double(pos_hunter[0]),c_double(pos_hunter[1]),c_double(pos_hunter[2]),\
+                                        c_double(ori_hunter[0]),c_double(ori_hunter[1]),c_double(ori_hunter[2]),\
+                                        c_double(pos_target[0]),c_double(pos_target[1]),c_double(pos_target[2]),\
+                                        c_double(screen_width),c_double(screen_height))
+
+    return outcoor.contents.u,outcoor.contents.v
+
 def simstop():
     dronesimapi.simstop()
     
@@ -96,7 +115,7 @@ def cmdfromkeyboard():
     
 
 class visualdrone():
-    def __init__(self,viewrange = 50,arrowlen = 10):
+    def __init__(self,viewrange = 50,arrowlen = 5):
         self.range = viewrange
         self.rawlen = self.range/arrowlen
 
@@ -119,19 +138,19 @@ class visualdrone():
 
             return R
         
-        def draw3d(ax, xyz, R):
+        def draw3d(ax, xyz, R,arrowlen):
             # We draw in ENU coordinates, R and xyz are in NED
             ax.scatter(xyz[0], xyz[1], xyz[2])
             ax.quiver(xyz[0], xyz[1], xyz[2], R[0, 0], R[1, 0], R[2, 0], pivot='tail', \
-                    color='red')
+                    color='red',length = arrowlen)
             ax.quiver(xyz[0], xyz[1], xyz[2], R[0, 1], R[1, 1], R[2, 1], pivot='tail', \
-                    color='green')
+                    color='green',length = arrowlen)
             ax.quiver(xyz[0], xyz[1], xyz[2], R[0, 2], R[1, 2], R[2, 2], pivot='tail', \
-            color='blue')        
+                    color='blue',length = arrowlen)        
  
         self.axis3d.cla()
-        draw3d(self.axis3d,pos_hunter, self.rawlen * Rot_bn(ori_hunter))
-        draw3d(self.axis3d,pos_target, self.rawlen * Rot_bn(ori_target))
+        draw3d(self.axis3d,pos_hunter, Rot_bn(ori_hunter),self.rawlen)
+        draw3d(self.axis3d,pos_target, Rot_bn(ori_target),self.rawlen)
         
         self.axis3d.set_xlim(-self.range,self.range)
         self.axis3d.set_ylim(-self.range,self.range)
@@ -175,23 +194,25 @@ if __name__ == "__main__":
         R = Rx.dot(Ry).dot(Rz)
         return R
 
-    siminit([1,2,3],[0,0,0],[4,6,5],[0,0,0],5,10)
+    siminit([1,2,0],[0,0,0],[4,6,0],[0,0,0],5,10)
     renderer = visualdrone()
     it = 0
 
     last_pos = np.array([None,None,None])
-
+    #u,v = projection([10,0,0],[0,0,0],[0,0,0],600,800)
+    #print(u,v)
     for t in range(10000):
         roll,pitch,yaw,throttle = cmdfromkeyboard()
         #simcontrol([roll,pitch,yaw,throttle],[roll,pitch,yaw,throttle])
         
  
-        simrun(5000000,[roll,pitch,yaw,throttle],[roll,pitch,yaw,throttle])
+        simrun(5000000,[0,0,0,0],[roll,pitch,yaw,throttle])
         pos_hunter,ori_hunter,acc_hunter,pos_target,ori_target,acc_target,thrust = siminfo()
        
 
         if it%30 == 0:
             renderer.render(pos_hunter,ori_hunter,pos_target,ori_target)
+            print(pos_hunter[0],pos_hunter[1],pos_hunter[2])
         it+=1
     dronesimapi.simstop()
 
