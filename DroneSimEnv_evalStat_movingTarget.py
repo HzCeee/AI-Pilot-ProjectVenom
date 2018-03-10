@@ -133,7 +133,7 @@ class DroneSimEnv(gym.Env):
 
         # update hunter
         # dronesim.simcontrol([roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])
-        dronesim.simrun(int(1e9 / self.fps), [roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])   #transform from second to nanoseconds
+        # dronesim.simrun(int(1e9 / self.fps), [roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])   #transform from second to nanoseconds
         
         # update state
         self.state = self.get_state()
@@ -173,7 +173,7 @@ class DroneSimEnv(gym.Env):
         # control parameter
         self.iteration += 1
 
-        return self.state, reward, done, {'distance': self.distance, 'reason': reason}
+        return self.state, reward, False, {'distance': self.distance, 'reason': reason}
 
 
 
@@ -234,6 +234,10 @@ class DroneSimEnv(gym.Env):
         # state related property
         position_hunter = np.matrix([0.0, 0.0, 10.0]) # x, y, z
         orientation_hunter = np.matrix([0.0, 0.0, 0.0]) # roll, pitch, taw
+        
+        # position_hunter = np.matrix([44.41015975 -3.96066086  7.88967305])
+        # orientation_hunter = np.matrix([-11.276222823141545, 8.627114153116235, 27.256829024182572])
+        # position_target = np.matrix([17.49014858 -5.98676401 21.02755752])
 
         #the position of target is generated randomly and should not exceed the vision range of hunter
         position_target = np.matrix([10.0, 0.0, 10.0]) + np.random.normal(0, 5) # x, y, z
@@ -249,6 +253,10 @@ class DroneSimEnv(gym.Env):
             distance = np.linalg.norm(position_hunter - position_target)
         
         # print(position_hunter, orientation_hunter, position_target)
+        
+        position_hunter = np.matrix([38.5, 26.8, 30.3])
+        orientation_hunter = np.matrix([20.5,12.9,84.9])
+        position_target = np.matrix([16.4,8.8,39.9])
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
                          np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5)
