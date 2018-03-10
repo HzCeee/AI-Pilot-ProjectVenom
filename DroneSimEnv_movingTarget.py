@@ -6,7 +6,7 @@ from gym.utils import seeding
 import numpy as np
 
 from baselines import logger
-from projection import *
+# from projection import *
 from collections import deque
 
 import dronesim
@@ -28,7 +28,7 @@ class DroneSimEnv(gym.Env):
         
         self.max_absolute_thrust = 16 # 2 * self.gravity
         self.min_absolute_thrust = 4
-        self.thrust_sensity = 6
+        self.thrust_sensity = (self.max_absolute_thrust - self.min_absolute_thrust) / 2
 
         self.min_absolute_x, self.max_absolute_x = 0, self.width
         self.min_absolute_y, self.max_absolute_y = 0, self.height
@@ -37,8 +37,8 @@ class DroneSimEnv(gym.Env):
         self.min_detect_distance, self.max_detect_distance = 1, 30
 
         self.max_absolute_angle = 180
-        self.max_roll_angle = 180
-        self.max_pitch_angle = 180
+        self.max_roll_angle = 30
+        self.max_pitch_angle = 30
         self.max_yaw_angle = 180
 
         #self.max_absolute_thrust = 2 * self.mass_hunter * self.gravity
@@ -119,7 +119,7 @@ class DroneSimEnv(gym.Env):
     def step(self, action):
         roll, pitch, yaw, thrust = action[0], action[1], action[2], action[3]
         
-        if self.iteration % 20 == 0:
+        if self.iteration % 50 == 0:
             self.roll_target = min(max(self.roll_target + 0.33 * np.random.randn(), -1), 1)
             self.pitch_target = min(max(self.pitch_target + 0.33 * np.random.randn(), -1), 1)
             self.yaw_target = min(max(self.yaw_target + 0.33 * np.random.randn(), -1), 1)
@@ -154,7 +154,11 @@ class DroneSimEnv(gym.Env):
             self.episodes += 1
             self.iteration = 0
 
-        reward -= (abs(self.coordinate_queue[-1][0] - 0.5) + abs(self.coordinate_queue[-1][1] - 0.5)) * 20 if self.coordinate_queue[-1][0] is not None else 20
+        if self.coordinate_queue[-1][0] != -1:
+            error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
+            reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
+        else:
+            reward -= 20
 
         if self.distance > self.max_detect_distance or self.distance < self.min_detect_distance or self.iteration > self.max_iteration:
             done = True
@@ -184,7 +188,7 @@ class DroneSimEnv(gym.Env):
         
         self.flag = False
         try:
-            (absolute_x, absolute_y), target_in_front = projection(np.matrix(position_target), np.matrix(position_hunter), np.matrix(orientation_hunter), w=float(self.width), h=float(self.height))
+            (absolute_x, absolute_y), target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, w=float(self.width), h=float(self.height))
         except ValueError:
             logger.info('###########################################')
             logger.info('episodes: {}, iteration: {}'.format(self.episodes, self.iteration))
@@ -231,7 +235,7 @@ class DroneSimEnv(gym.Env):
             logger.info('target action: {},{},{},{}'.format(self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target))
             logger.info('hunter action: {},{},{},{}'.format(self.test_roll_hunter, self.test_pitch_hunter, self.test_yaw_hunter, self.test_thrust_hunter))
         '''
-        relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
+        if target_in_front: relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
         target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front and self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y else np.array((-1, -1))
         
         self.distance = np.linalg.norm(position_hunter - position_target)
@@ -266,6 +270,9 @@ class DroneSimEnv(gym.Env):
 
 
     def reset(self):
+        # camera
+        dronesim.installcamera([0,-15,180])
+
         # state related property
         position_hunter = np.matrix([0.0, 0.0, 10.0]) # x, y, z
         orientation_hunter = np.matrix([0.0, 0.0, 0.0]) # roll, pitch, taw
@@ -275,12 +282,12 @@ class DroneSimEnv(gym.Env):
         orientation_target = np.matrix([0.0, 0.0, 0.0]) # roll, pitch, yaw
         self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target = 0, 0, 0, 0
 
-        (absolute_x, absolute_y), target_in_front = projection(position_target, position_hunter, orientation_hunter, w=float(self.width), h=float(self.height)) 
+        (absolute_x, absolute_y), target_in_front = dronesim.projection(position_target, position_hunter, orientation_hunter, w=float(self.width), h=float(self.height)) 
         distance = np.linalg.norm(position_hunter - position_target)
         # invalid initialization
         while (not target_in_front or absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
             position_target = np.matrix([10.0, 0.0, 10.0]) + np.random.normal(0, 5)
-            (absolute_x, absolute_y), target_in_front = projection(position_target, position_hunter, orientation_hunter, w=float(self.width), h=float(self.height)) 
+            (absolute_x, absolute_y), target_in_front = dronesim.projection(position_target, position_hunter, orientation_hunter, w=float(self.width), h=float(self.height)) 
             distance = np.linalg.norm(position_hunter - position_target)
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
