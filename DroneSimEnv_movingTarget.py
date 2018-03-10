@@ -143,7 +143,7 @@ class DroneSimEnv(gym.Env):
         self.state = self.get_state()
 
         # calculate reward and check if done
-        reward = (self.previous_distance - self.distance) * 500 # even if chasing at max speed, the reward will be 10 / 100 * 500 = 50
+        reward = (self.previous_distance - self.distance) * 1000 # even if chasing at max speed, the reward will be 10 / 100 * 500 = 50
         self.previous_distance = self.distance
 
         done = False
