@@ -251,12 +251,12 @@ class DroneSimEnv(gym.Env):
         orientation_target = np.matrix([0.0, 0.0, 0.0]) # roll, pitch, yaw
         self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target = 0, 0, 0, 0
 
-        absolute_x, absolute_y, target_in_front = dronesim.projection(position_target, position_hunter, orientation_hunter, float(self.width), float(self.height)) 
+        absolute_x, absolute_y, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, float(self.width), float(self.height))
         distance = np.linalg.norm(position_hunter - position_target)
         # invalid initialization
         while (not target_in_front or absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
             position_target = np.matrix([10.0, 0.0, 10.0]) + np.random.normal(0, 5)
-            absolute_x, absolute_y, target_in_front = dronesim.projection(position_target, position_hunter, orientation_hunter, float(self.width), float(self.height)) 
+            absolute_x, absolute_y, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, float(self.width), float(self.height)) 
             distance = np.linalg.norm(position_hunter - position_target)
         
         # print(position_hunter, orientation_hunter, position_target)
