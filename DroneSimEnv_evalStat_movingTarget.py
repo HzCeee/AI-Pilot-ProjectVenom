@@ -177,7 +177,7 @@ class DroneSimEnv(gym.Env):
         # control parameter
         self.iteration += 1
 
-        return self.state, reward, False, {'distance': self.distance, 'reason': reason}
+        return self.state, reward, done, {'distance': self.distance, 'reason': reason}
 
 
 
