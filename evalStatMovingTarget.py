@@ -73,6 +73,10 @@ reason = {1:0, 2:0, 3:0}
 
 with U.single_threaded_session() as sess:
     agent.initialize(sess)
+
+    saver = tf.train.Saver()
+    saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model/Exp1_mv_best') 
+    
     # sess.graph.finalize()
     iteration = 0
     success_number = 0
@@ -80,10 +84,7 @@ with U.single_threaded_session() as sess:
         iteration += 1
         print(iteration)
         agent.reset()
-        obs = env.reset()
-
-        saver = tf.train.Saver()
-        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model/Exp1_mv_best')  
+        obs = env.reset() 
 
         done = False
         step = 0
