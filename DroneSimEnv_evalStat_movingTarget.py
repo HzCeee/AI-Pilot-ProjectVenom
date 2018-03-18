@@ -36,8 +36,8 @@ class DroneSimEnv(gym.Env):
         self.min_detect_distance, self.max_detect_distance = 1, 30
 
         self.max_absolute_angle = 180
-        self.max_roll_angle = 30
-        self.max_pitch_angle = 30
+        self.max_roll_angle = 40
+        self.max_pitch_angle = 40
         self.max_yaw_angle = 180
 
         #self.max_absolute_thrust = 2 * self.mass_hunter * self.gravity
