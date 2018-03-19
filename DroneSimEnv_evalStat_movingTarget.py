@@ -154,7 +154,7 @@ class DroneSimEnv(gym.Env):
             self.episodes += 1
             self.iteration = 0
         '''
-
+        print('reward1: ', reward)
         if self.coordinate_queue[-1][0] != -1:
             error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
             reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
@@ -176,7 +176,7 @@ class DroneSimEnv(gym.Env):
 
         # control parameter
         self.iteration += 1
-
+        print('reward: ', reward)
         return self.state, reward, done, {'distance': self.distance, 'reason': reason}
 
 
@@ -237,7 +237,6 @@ class DroneSimEnv(gym.Env):
     def reset(self):
         # camera
         dronesim.installcamera([0,-15,180])
-
         # state related property
         position_hunter = [0.0, 0.0, 10.0] # x, y, z
         orientation_hunter = [0.0, 0.0, 0.0] # roll, pitch, taw
@@ -250,10 +249,16 @@ class DroneSimEnv(gym.Env):
         position_target = (np.array([10.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist() # x, y, z
         orientation_target = [0.0, 0.0, 0.0] # roll, pitch, yaw
         self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target = 0, 0, 0, 0
-
+        print('error c')
+        print('lala: ', position_hunter, orientation_hunter, position_target, self.width, self.height)
         absolute_x, absolute_y, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, float(self.width), float(self.height))
+        print('position: ', position_hunter)
+        print('error e')
+        print('pos_hunter: ', position_hunter)
+        print('pos_target: ', position_target)
         distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
         # invalid initialization
+        print('error d')
         while (not target_in_front or absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
             position_target = (np.array([10.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist()
             absolute_x, absolute_y, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, float(self.width), float(self.height)) 
@@ -264,10 +269,10 @@ class DroneSimEnv(gym.Env):
         # position_hunter = np.matrix([38.5, 26.8, 30.3])
         # orientation_hunter = np.matrix([20.5,12.9,84.9])
         # position_target = np.matrix([16.4,8.8,39.9])
-
+        print('error a')
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
                          np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5)
-        
+        print('error b')
         self.previous_distance = distance
         self.state = self.get_state()
 

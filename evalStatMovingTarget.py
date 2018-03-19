@@ -83,8 +83,13 @@ with U.single_threaded_session() as sess:
     while iteration < max_iteration:
         iteration += 1
         print(iteration)
-        agent.reset()
-        obs = env.reset() 
+        # agent.reset()
+
+        print('error 1')
+
+        obs = env.reset()
+
+        print('error 2')
 
         done = False
         step = 0
@@ -113,8 +118,8 @@ with U.single_threaded_session() as sess:
                     success.append(0)
 
                 # time.sleep(10)
-                agent.reset()
-                obs = env.reset()
+                # agent.reset()
+                # obs = env.reset()
 
         env.stop()
 
