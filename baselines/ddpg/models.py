@@ -46,11 +46,6 @@ class Actor(Model):
                 x = tc.layers.layer_norm(x, center=True, scale=True)
             x = tf.nn.relu(x)
 
-            x = tf.layers.dense(x, 600)
-            if self.layer_norm:
-                x = tc.layers.layer_norm(x, center=True, scale=True)
-            x = tf.nn.relu(x)
-
             x = tf.layers.dense(x, self.nb_actions, kernel_initializer=tf.random_uniform_initializer(minval=-3e-3, maxval=3e-3))
             x = tf.nn.tanh(x)
         return x
@@ -73,11 +68,6 @@ class Critic(Model):
             x = tf.nn.relu(x)
 
             x = tf.concat([x, action], axis=-1)
-            x = tf.layers.dense(x, 600)
-            if self.layer_norm:
-                x = tc.layers.layer_norm(x, center=True, scale=True)
-            x = tf.nn.relu(x)
-
             x = tf.layers.dense(x, 600)
             if self.layer_norm:
                 x = tc.layers.layer_norm(x, center=True, scale=True)
