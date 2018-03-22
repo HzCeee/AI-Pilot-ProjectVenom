@@ -72,7 +72,7 @@ class DroneSimEnv(gym.Env):
                 self.min_roll, self.min_pitch, self.min_yaw, self.min_thrust,
                 self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y,
                 self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, 
-                self.min_distance, self.min_distance, self.min_distance, self.min_distance
+                self.min_distance, self.min_distance, self.min_distance, self.min_distance#, self.min_distance, self.min_distance, self.min_distance, self.min_distance
             ]
         )
         self.high_state = np.array(
@@ -80,7 +80,7 @@ class DroneSimEnv(gym.Env):
                 self.max_roll, self.max_pitch, self.max_yaw, self.max_thrust,
                 self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y,
                 self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, 
-                self.max_distance, self.max_distance, self.max_distance, self.max_distance
+                self.max_distance, self.max_distance, self.max_distance, self.max_distance#, self.max_distance, self.max_distance, self.max_distance, self.max_distance
             ]
         )
 

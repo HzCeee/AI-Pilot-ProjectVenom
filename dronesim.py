@@ -133,7 +133,7 @@ def cmdfromkeyboard():
     
 
 class visualdrone():
-    def __init__(self,viewrange = 50,arrowlen = 5):
+    def __init__(self,viewrange = 20,arrowlen = 5):
         self.range = viewrange
         self.rawlen = self.range/arrowlen
 
