@@ -157,7 +157,7 @@ class DroneSimEnv(gym.Env):
         if self.coordinate_queue[-1][0] != -1:
             error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
             # reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
-            reward = reward - 200 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
+            reward = reward - 50 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
         else:
             reward = -100
 

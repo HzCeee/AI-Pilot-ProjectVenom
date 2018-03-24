@@ -46,7 +46,7 @@ class DroneSimEnv(gym.Env):
         state related property
         '''
         # configuration of relative position in view
-        self.queue_length = 4
+        self.queue_length = 8
         self.coordinate_queue = None
         self.distance_queue = None
 
@@ -72,7 +72,7 @@ class DroneSimEnv(gym.Env):
                 self.min_roll, self.min_pitch, self.min_yaw, self.min_thrust,
                 self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y,
                 self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, self.min_relative_x, self.min_relative_y, 
-                self.min_distance, self.min_distance, self.min_distance, self.min_distance#, self.min_distance, self.min_distance, self.min_distance, self.min_distance
+                self.min_distance, self.min_distance, self.min_distance, self.min_distance, self.min_distance, self.min_distance, self.min_distance, self.min_distance
             ]
         )
         self.high_state = np.array(
@@ -80,7 +80,7 @@ class DroneSimEnv(gym.Env):
                 self.max_roll, self.max_pitch, self.max_yaw, self.max_thrust,
                 self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y,
                 self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, self.max_relative_x, self.max_relative_y, 
-                self.max_distance, self.max_distance, self.max_distance, self.max_distance#, self.max_distance, self.max_distance, self.max_distance, self.max_distance
+                self.max_distance, self.max_distance, self.max_distance, self.max_distance, self.max_distance, self.max_distance, self.max_distance, self.max_distance
             ]
         )
 
@@ -154,13 +154,14 @@ class DroneSimEnv(gym.Env):
             self.episodes += 1
             self.iteration = 0
         '''
-        print('reward1: ', reward)
+        print('reward of first term: ', reward)
         print(self.coordinate_queue[-1])
         if self.coordinate_queue[-1][0] != -1:
             error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
-            reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
+            # reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
+            reward = reward - 200 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
         else:
-            reward -= 20
+            reward = -100
         
         if self.distance > self.max_detect_distance*2 or self.distance < self.min_detect_distance or self.iteration > 100000:
             done = True
