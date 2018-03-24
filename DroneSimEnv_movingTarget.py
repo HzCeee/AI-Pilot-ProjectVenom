@@ -126,8 +126,6 @@ class DroneSimEnv(gym.Env):
             self.thrust_target = min(max(self.thrust_target + 0.33 * np.random.randn(), -1), 1)
 
         # update hunter
-        # dronesim.simcontrol([roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])
-
         dronesim.simrun(int(1e9 / self.fps), [roll, pitch, yaw, thrust], [self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target])   #transform from second to nanoseconds
         
         #####################
@@ -141,10 +139,17 @@ class DroneSimEnv(gym.Env):
 
         # update state
         self.state = self.get_state()
+        self.previous_distance = self.distance
 
         # calculate reward and check if done
-        reward = (self.previous_distance - self.distance) * 1000 # even if chasing at max speed, the reward will be 10 / 100 * 500 = 50
-        self.previous_distance = self.distance
+        # reward = (self.previous_distance - self.distance) * 1000 # even if chasing at max speed, the reward will be 10 / 100 * 500 = 50
+
+        if self.coordinate_queue[-1][0] != -1:
+            error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
+            # reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
+            reward = -200 * np.linalg.norm([error_x/self.distance, error_y/self.distance, (1/self.distance - 1)/10])
+        else:
+            reward = -100
 
         done = False
         is_in_view = [ (self.min_relative_x < coordinate[0] < self.max_relative_x and self.min_relative_y < coordinate[1] < self.max_relative_y) if coordinate[0] != -1 else False for coordinate in self.coordinate_queue]
@@ -153,13 +158,6 @@ class DroneSimEnv(gym.Env):
             reward = 0
             self.episodes += 1
             self.iteration = 0
-
-        if self.coordinate_queue[-1][0] != -1:
-            error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
-            # reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
-            reward = reward - 50 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
-        else:
-            reward = -100
 
         if self.distance > self.max_detect_distance or self.distance < self.min_detect_distance or self.iteration > self.max_iteration:
             done = True
@@ -241,7 +239,7 @@ class DroneSimEnv(gym.Env):
         
         self.distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
         # get distance within hunter and target
-        distance = np.array([self.distance / self.max_initial_distance])  
+        distance = np.array([self.distance / self.max_initial_distance]) if target_in_front and self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y else np.array([0])
 
         # maintain a 8-length deque
         if self.coordinate_queue is None and self.distance_queue is None:
