@@ -157,7 +157,8 @@ class DroneSimEnv(gym.Env):
         if self.coordinate_queue[-1][0] != -1:
             error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
             # reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
-            reward = reward - 50 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
+            reward = reward - 300 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
+            # reward = -100 * np.linalg.norm([error_x/self.distance, error_y/self.distance, (1/self.distance - 1)/5])
         else:
             reward = -100
 
@@ -241,7 +242,7 @@ class DroneSimEnv(gym.Env):
         
         self.distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
         # get distance within hunter and target
-        distance = np.array([self.distance / self.max_initial_distance])  
+        distance = np.array([self.distance / self.max_initial_distance])# if (target_coordinate_in_view == np.array((-1, -1)))[0] else np.array([0]) 
 
         # maintain a 8-length deque
         if self.coordinate_queue is None and self.distance_queue is None:
@@ -272,7 +273,7 @@ class DroneSimEnv(gym.Env):
 
     def reset(self):
         # camera
-        dronesim.installcamera([0,-15,180])
+        dronesim.installcamera([0,-15,180], 63, 110, 0.01, 500)
 
         # state related property
         position_hunter = [0.0, 0.0, 10.0] # x, y, z
@@ -292,7 +293,7 @@ class DroneSimEnv(gym.Env):
             distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5, 720, 180)
         
         self.init_pos_target = position_target
 

@@ -2,10 +2,8 @@ from ctypes import *
 import numpy as np
 import math
 import keyboard
-import animation as ani
-from scipy import linalg as la
 import matplotlib.pyplot as pl
-import time
+from mpl_toolkits.mplot3d import Axes3D
 
 class infoformat(Structure):
     _fields_ = [\
@@ -33,7 +31,7 @@ dronesimapi = CDLL('./drone_sim.so')
 
 dronesimapi.siminit.argtype = [c_double,c_double,c_double,c_double,c_double,c_double,\
                                c_double,c_double,c_double,c_double,c_double,c_double,\
-                               c_double,c_double]
+                               c_double,c_double,c_double,c_double]
 
 dronesimapi.simrun.argtype  = [c_double,c_double,c_double,\
                                c_double,c_double,c_double,\
@@ -49,15 +47,18 @@ dronesimapi.simprojection.argtype = [c_double,c_double,c_double,c_double,c_doubl
 
 dronesimapi.simprojection.restype = POINTER(imagecoor)
 
-dronesimapi.installcamera.argtype  = [c_double,c_double,c_double]
+dronesimapi.installcamera.argtype  = [c_double,c_double,c_double,\
+                                      c_double,c_double,c_double,c_double,c_double,c_double]
 
 #interface warper:
-def siminit(pos_hunter, ori_hunter, pos_target, ori_target,speed_upbound_hunter,speed_upbound_target):
+def siminit(pos_hunter, ori_hunter, pos_target, ori_target,speed_upbound_hunter,speed_upbound_target,\
+            yawdot_bound_hunter = 180,yawdot_bound_target = 180):
     dronesimapi.siminit(c_double(pos_hunter[0]),c_double(pos_hunter[1]),c_double(pos_hunter[2]),\
                         c_double(ori_hunter[0]),c_double(ori_hunter[1]),c_double(ori_hunter[2]),\
                         c_double(pos_target[0]),c_double(pos_target[1]),c_double(pos_target[2]),\
                         c_double(ori_target[0]),c_double(ori_target[1]),c_double(ori_target[2]),\
-                        c_double(speed_upbound_hunter),c_double(speed_upbound_target))
+                        c_double(speed_upbound_hunter),c_double(speed_upbound_target),\
+                        c_double(yawdot_bound_hunter),c_double(yawdot_bound_target))
 
 def simrun(period,huntercmd,targetcmd = None):
     # input : period time in second
@@ -105,8 +106,22 @@ def projection(pos_hunter,ori_hunter,pos_target,w,h):
     
     return u,v,inscrean
 
-def installcamera(installori):
-    dronesimapi.installcamera(c_double(installori[0]),c_double(installori[1]),c_double(installori[2]))
+def installcamera(installori,F,H,FOVnear,FOVfar):  
+#F,H is the angle in degrees, FOVnear and FOVfar are the position of near and far plane
+    def getnearsize(F,H,FOVnear):
+        F = np.cos(np.radians(F))
+        H = np.cos(np.radians(H))
+        D = np.matrix([[F + 1, F - 1],[H - 1, H + 1]])
+        b = np.matrix([[4 - 4*F],[4 - 4*H]]) * FOVnear**2
+        upandright = D.I*b
+        up = np.sqrt(upandright[0,0])/2
+        right = np.sqrt(upandright[1,0])/2
+        return up,right
+    
+    up,right = getnearsize(F,H,FOVnear)
+    # print(up,right)
+    dronesimapi.installcamera(c_double(installori[0]),c_double(installori[1]),c_double(installori[2]),\
+                              c_double(-right),c_double(right),c_double(-up),c_double(up),c_double(FOVnear),c_double(FOVfar))
 
 def simstop():
     dronesimapi.simstop()
@@ -133,7 +148,7 @@ def cmdfromkeyboard():
     
 
 class visualdrone():
-    def __init__(self,viewrange = 20,arrowlen = 5):
+    def __init__(self,viewrange = 50,arrowlen = 5):
         self.range = viewrange
         self.rawlen = self.range/arrowlen
 
@@ -182,42 +197,20 @@ class visualdrone():
 
 ##############test#######################
 if __name__ == "__main__":
-    import animation as ani
+    
     import numpy as np
     from scipy import linalg as la
-    import matplotlib.pyplot as pl
     import time
 
-
-    def Rot_bn(phi,theta,psi):
-        cphi = np.cos(phi)
-        sphi = np.sin(phi)
-        cthe = np.cos(theta)
-        sthe = np.sin(theta)
-        cpsi = np.cos(psi)
-        spsi = np.sin(psi)
-
-        Rx = np.array([[1,    0,      0], \
-                       [0,  cphi,  sphi], \
-                       [0, -sphi,  cphi]])
-
-        Ry = np.array([[cthe,  0,  -sthe], \
-                       [   0,  1,      0], \
-                       [sthe,  0,   cthe]])
-
-        Rz = np.array([[ cpsi,  spsi, 0], \
-                       [-spsi,  cpsi, 0], \
-                       [    0,    0, 1]])
-
-        R = Rx.dot(Ry).dot(Rz)
-        return R
-
-    siminit([1,2,0],[0,0,180],[4,6,0],[0,0,0],5,10)
+    siminit([1,2,0],[0,0,180],[4,6,0],[0,0,0],5,10,180,180)
     renderer = visualdrone()
     it = 0
 
     last_pos = np.array([None,None,None])
-    #u,v = projection([10,0,0],[0,0,0],[0,0,0],600,800)
+
+    #installcamera([0,0,0],110,63, 0.01, 500.0)
+    #u,v,t = projection([0,0,0],[0,0,0],[-0.01,0.022082516790052263,0.03462007361006086],600,800)
+
     #print(u,v)
     for t in range(10000):
         roll,pitch,yaw,throttle = cmdfromkeyboard()
