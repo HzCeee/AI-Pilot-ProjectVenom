@@ -75,7 +75,7 @@ with U.single_threaded_session() as sess:
     agent.initialize(sess)
 
     saver = tf.train.Saver()
-    saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model/Exp4_mv_best') 
+    saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_moving/exp300/Exp4_mv_best') 
     
     # sess.graph.finalize()
     iteration = 0

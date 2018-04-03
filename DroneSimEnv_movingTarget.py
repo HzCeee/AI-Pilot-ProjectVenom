@@ -293,7 +293,7 @@ class DroneSimEnv(gym.Env):
             distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5, 720, 180)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5)#, 720, 180)
         
         self.init_pos_target = position_target
 
