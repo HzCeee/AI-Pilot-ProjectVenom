@@ -107,6 +107,7 @@ class DroneSimEnv(gym.Env):
         self.observation_space = spaces.Box(low=self.low_state, high=self.high_state)
 
         self.seed()
+        dronesim.installcamera([0, -15, 180], 63, 110, 0.01, 500, self.width, self.height)
         self.reset()
 
 
@@ -159,7 +160,7 @@ class DroneSimEnv(gym.Env):
         if self.coordinate_queue[-1][0] != -1:
             error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
             # reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
-            reward = reward - 200 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
+            reward = reward - 300 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
         else:
             reward = -100
         
@@ -192,20 +193,29 @@ class DroneSimEnv(gym.Env):
         orientation_target = [math.degrees(degree) for degree in orientation_target]
         
         try:        
-            absolute_x, absolute_y, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, float(self.width), float(self.height))
+            absolute_x, absolute_y, area_ratio, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, orientation_target)
         except ValueError:
             self.distance = 100
             return self.state
+        
+        self.distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
 
         if target_in_front: relative_x, relative_y = absolute_x / self.width, absolute_y / self.height
-        target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front and self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y else np.array((-1, -1))
+        target_coordinate_in_view = np.array((relative_x, relative_y)).flatten() if target_in_front and (self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y) else np.array((-1,-1))#or area_ratio * self.width * self.height * self.distance * self.distance > 6) else np.array((-1, -1))
         
+        print(area_ratio * self.width * self.height * self.distance * self.distance)
+        print(self.min_absolute_x < absolute_x < self.max_absolute_x and self.min_absolute_y < absolute_y < self.max_absolute_y)
+        print(target_in_front)
+        print(position_hunter, position_target)
+        print(orientation_hunter, orientation_target)
+        print('---')
+
         # print('!!!!####')
         # print(position_hunter, orientation_hunter, position_target)
         # print(0 < absolute_x < 256, 0 < absolute_y < 144, target_in_front)
         # print(target_coordinate_in_view)
 
-        self.distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
+        # self.distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
         # get distance within hunter and target
         distance = np.array([self.distance / self.max_initial_distance])  
 
@@ -238,7 +248,7 @@ class DroneSimEnv(gym.Env):
 
     def reset(self):
         # camera
-        dronesim.installcamera([0,-15,180], 110, 63, 0.01, 500)
+        # dronesim.installcamera([0,-15,180], 110, 63, 0.01, 500)
         # state related property
         position_hunter = [0.0, 0.0, 10.0] # x, y, z
         orientation_hunter = [0.0, 0.0, 0.0] # roll, pitch, taw
@@ -251,11 +261,11 @@ class DroneSimEnv(gym.Env):
         position_target = (np.array([10.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist() # x, y, z
         orientation_target = [0.0, 0.0, 0.0] # roll, pitch, yaw
         self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target = 0, 0, 0, 0
-        # print('error c')
-        # print('lala: ', position_hunter, orientation_hunter, position_target, self.width, self.height)
-        absolute_x, absolute_y, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, float(self.width), float(self.height))
+        print('error c')
+        print('lala: ', position_hunter, orientation_hunter, position_target, self.width, self.height)
+        absolute_x, absolute_y, area_ratio, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, orientation_target)
         # print('position: ', position_hunter)
-        # print('error e')
+        print('error e')
         # print('pos_hunter: ', position_hunter)
         # print('pos_target: ', position_target)
         distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
@@ -263,7 +273,7 @@ class DroneSimEnv(gym.Env):
         # print('error d')
         while (not target_in_front or absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
             position_target = (np.array([10.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist()
-            absolute_x, absolute_y, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, float(self.width), float(self.height)) 
+            absolute_x, absolute_y, area_ratio, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, orientation_target) 
             distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
         
         # print(position_hunter, orientation_hunter, position_target)

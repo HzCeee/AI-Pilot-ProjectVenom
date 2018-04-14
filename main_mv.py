@@ -1,3 +1,7 @@
+# from comet_ml import Experiment
+
+# experiment = Experiment(api_key="dtnsFeC1d76rHRmAikBKYJ2nI")
+
 import argparse
 import time
 import os

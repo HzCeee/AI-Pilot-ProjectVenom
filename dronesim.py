@@ -4,6 +4,8 @@ import math
 import keyboard
 import matplotlib.pyplot as pl
 from mpl_toolkits.mplot3d import Axes3D
+from scipy import linalg as la
+import time
 
 class infoformat(Structure):
     _fields_ = [\
@@ -21,7 +23,7 @@ class infoformat(Structure):
 
 class imagecoor(Structure):
     _fields_ = [\
-    ("u",c_double),("v",c_double),("w",c_double)]
+    ("u",c_double),("v",c_double),("w",c_double),("area",c_double)]
 
 
 #windows version interface 
@@ -42,13 +44,13 @@ dronesimapi.siminfo.restype = POINTER(infoformat)
 
 
 dronesimapi.simprojection.argtype = [c_double,c_double,c_double,c_double,c_double,c_double,\
-                                     c_double,c_double,c_double,\
-                                     c_double,c_double]
+                                     c_double,c_double,c_double,c_double,c_double,c_double]
 
 dronesimapi.simprojection.restype = POINTER(imagecoor)
 
 dronesimapi.installcamera.argtype  = [c_double,c_double,c_double,\
-                                      c_double,c_double,c_double,c_double,c_double,c_double]
+                                      c_double,c_double,c_double,c_double,c_double,c_double,\
+                                      c_double,c_double]
 
 #interface warper:
 def siminit(pos_hunter, ori_hunter, pos_target, ori_target,speed_upbound_hunter,speed_upbound_target,\
@@ -78,20 +80,25 @@ def siminfo():
     pos_hunter = np.array([outinfo.contents.posx,outinfo.contents.posy,outinfo.contents.posz])
     ori_hunter = np.array([outinfo.contents.thetax,outinfo.contents.thetay,outinfo.contents.thetaz])
     acc_hunter = np.array([outinfo.contents.accx,outinfo.contents.accy,outinfo.contents.accz])
-    
+    spd_hunter = np.array([outinfo.contents.velocityx,outinfo.contents.velocityy,outinfo.contents.velocityz])    
+
+
     pos_target = np.array([outinfo.contents.posx_t,outinfo.contents.posy_t,outinfo.contents.posz_t])
     ori_target = np.array([outinfo.contents.thetax_t,outinfo.contents.thetay_t,outinfo.contents.thetaz_t])
     acc_target = np.array([outinfo.contents.accx_t,outinfo.contents.accy_t,outinfo.contents.accz_t])
-
+    spd_target = np.array([outinfo.contents.velocityx_t,outinfo.contents.velocityy_t,outinfo.contents.velocityz_t]) 
     
-    return pos_hunter,ori_hunter,acc_hunter,pos_target,ori_target,acc_target,outinfo.contents.thrust
+    return pos_hunter,ori_hunter,acc_hunter,pos_target,ori_target,acc_target,outinfo.contents.thrust,spd_hunter,spd_target
 
-def projection(pos_hunter,ori_hunter,pos_target,w,h):
+def projection(pos_hunter,ori_hunter,pos_target,ori_target):
     outcoor = dronesimapi.simprojection(c_double(pos_hunter[0]),c_double(pos_hunter[1]),c_double(pos_hunter[2]),\
                                         c_double(ori_hunter[0]),c_double(ori_hunter[1]),c_double(ori_hunter[2]),\
                                         c_double(pos_target[0]),c_double(pos_target[1]),c_double(pos_target[2]),\
-                                        c_double(w),c_double(h))
+                                        c_double(ori_target[0]),c_double(ori_target[1]),c_double(ori_target[2]))
+
     u,v,w = outcoor.contents.u,outcoor.contents.v,outcoor.contents.w
+    projectedarea = outcoor.contents.area
+    
     inscrean = True
     
     if math.isnan(u) or math.isinf(u):
@@ -104,9 +111,9 @@ def projection(pos_hunter,ori_hunter,pos_target,w,h):
         inscrean = False
     
     
-    return u,v,inscrean
+    return u,v,projectedarea,inscrean
 
-def installcamera(installori,F,H,FOVnear,FOVfar):  
+def installcamera(installori,F,H,FOVnear,FOVfar,SCR_width,SCR_height): 
 #F,H is the angle in degrees, FOVnear and FOVfar are the position of near and far plane
     def getnearsize(F,H,FOVnear):
         F = np.cos(np.radians(F))
@@ -119,9 +126,10 @@ def installcamera(installori,F,H,FOVnear,FOVfar):
         return up,right
     
     up,right = getnearsize(F,H,FOVnear)
-    # print(up,right)
+    #print(up,right)
     dronesimapi.installcamera(c_double(installori[0]),c_double(installori[1]),c_double(installori[2]),\
-                              c_double(-right),c_double(right),c_double(-up),c_double(up),c_double(FOVnear),c_double(FOVfar))
+                              c_double(-right),c_double(right),c_double(-up),c_double(up),c_double(FOVnear),c_double(FOVfar),\
+                              c_double(SCR_width),c_double(SCR_height))
 
 def simstop():
     dronesimapi.simstop()
@@ -208,19 +216,14 @@ if __name__ == "__main__":
 
     last_pos = np.array([None,None,None])
 
-    #installcamera([0,0,0],110,63, 0.01, 500.0)
-    #u,v,t = projection([0,0,0],[0,0,0],[-0.01,0.022082516790052263,0.03462007361006086],600,800)
+
 
     #print(u,v)
-    for t in range(10000):
-        roll,pitch,yaw,throttle = cmdfromkeyboard()
-        #simcontrol([roll,pitch,yaw,throttle],[roll,pitch,yaw,throttle])
-        
- 
-        simrun(5000000,[0,0,0,0],[0,0,0,0])
-        pos_hunter,ori_hunter,acc_hunter,pos_target,ori_target,acc_target,thrust = siminfo()
-       
-
+    for t in range(1000):
+        roll,pitch,yaw,throttle = cmdfromkeyboard() 
+        simrun(5000000,[0,0,0,1],[0,0,0,0])
+        pos_hunter,ori_hunter,acc_hunter,pos_target,ori_target,acc_target,thrust,spd_hunter,spd_target = siminfo()
+        print(spd_hunter,spd_target)
         if it%30 == 0:
             renderer.render(pos_hunter,ori_hunter,pos_target,ori_target)
             print(pos_hunter[0],pos_hunter[1],pos_hunter[2])

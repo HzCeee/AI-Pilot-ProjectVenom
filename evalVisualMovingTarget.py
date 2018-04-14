@@ -87,7 +87,7 @@ with U.single_threaded_session() as sess:
         obs = env.reset()
 
         saver = tf.train.Saver()
-        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_moving/exp300/Exp4_mv_best')
+        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_mv/exp2/Exp5_mv_best')
 
         done = False
         step = 0

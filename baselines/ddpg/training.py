@@ -1,3 +1,5 @@
+from comet_ml import Experiment
+
 import os
 import time
 from collections import deque
@@ -17,6 +19,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
     normalize_returns, normalize_observations, critic_l2_reg, actor_lr, critic_lr, action_noise,
     popart, gamma, clip_norm, nb_train_steps, nb_rollout_steps, nb_eval_steps, batch_size, memory,
     tau=0.01, eval_env=None, param_noise_adaption_interval=50):
+    
+    # experiment = Experiment(api_key="dtnsFeC1d76rHRmAikBKYJ2nI")
+    
     rank = MPI.COMM_WORLD.Get_rank()
 
     assert (np.abs(env.action_space.low) == env.action_space.high).all()  # we assume symmetric actions.
@@ -44,6 +49,9 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
         # Prepare everything.
         agent.initialize(sess)
         sess.graph.finalize()
+        
+        # comet.ml
+        # experiment.set_model_graph(sess.graph)
 
         agent.reset()
         obs = env.reset()
@@ -101,6 +109,8 @@ def train(env, nb_epochs, nb_epoch_cycles, render_eval, reward_scale, render, pa
                     obs = new_obs
 
                     if done:
+                        
+                        # experiment.log_metric("distance", info['distance'])
 
                         if len(roll_distance) < 2000:
                             roll_distance.append(info['distance'])
