@@ -1,4 +1,4 @@
-from DroneSimEnv_evalStat_movingTarget import *
+from DroneSimEnv_movingTarget_eval import *
 import random
 import time
 import tensorflow as tf
@@ -121,7 +121,7 @@ with U.single_threaded_session() as sess:
                 agent.reset()
                 # obs = env.reset()
 
-        env.stop()
+    env.stop()
 
 # print(success_number/max_iteration)
 print('----------------------')
