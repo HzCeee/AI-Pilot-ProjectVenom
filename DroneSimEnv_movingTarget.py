@@ -62,20 +62,27 @@ class DroneSimEnv(gym.Env):
         self.min_thrust, self.max_thrust = -1, 1 # thrust = self.min_absolute_thrust + self.thrust_sensity * (x + 1)
 
         # threshold for relative position in view
-        self.min_relative_x, self.max_relative_x = -1, 1 # 1 - 256
-        self.min_relative_y, self.max_relative_y = -1, 1 # 1 - 144
+        self.min_relative_x, self.max_relative_x = 0, 1 # 1 - 256
+        self.min_relative_y, self.max_relative_y = 0, 1 # 1 - 144
 
         # threshold for distance within target and hunter
         self.min_distance, self.max_distance = 0, 1 # 0 -> 30
 
+        # threshold for hunter velocity
+        self.min_velocity_x, self.max_velocity_x = -float("inf"), float("inf")
+        self.min_velocity_y, self.max_velocity_y = -float("inf"), float("inf")
+        self.min_velocity_z, self.max_velocity_z = -float("inf"), float("inf")
+
         # threshold for state
         self.low_state = np.array(
-            [self.min_roll, self.min_pitch, self.min_yaw, self.min_thrust] 
+            [self.min_roll, self.min_pitch, self.min_yaw, self.min_thrust]
+            + [self.min_velocity_x, self.min_velocity_y, self.min_velocity_z]
             + self.queue_length * [self.min_relative_x, self.min_relative_y]
             + self.queue_length * [self.min_distance]
             )
         self.high_state = np.array(
             [self.max_roll, self.max_pitch, self.max_yaw, self.max_thrust] 
+            + [self.max_velocity_x, self.max_velocity_y, self.max_velocity_z]
             + self.queue_length * [self.max_relative_x, self.max_relative_y]
             + self.queue_length * [self.max_distance]
             )
@@ -156,11 +163,9 @@ class DroneSimEnv(gym.Env):
             self.episodes += 1
             self.iteration = 0
 
-        if self.coordinate_queue[-1][0] != self.min_relative_x:
+        if self.is_in_fov == 1:
             error_x, error_y = abs(self.coordinate_queue[-1][0] - 0.5), abs(self.coordinate_queue[-1][1] - 0.5)
-            # reward = reward - 20*error_x - 10*error_y - 20*(error_x*error_y) # so the largest possible punishment is 20
             reward = reward - 300 * np.linalg.norm([error_x/self.distance, error_y/self.distance])
-            # reward = -100 * np.linalg.norm([error_x/self.distance, error_y/self.distance, (1/self.distance - 1)/5])
         else:
             reward = -100
 
@@ -185,7 +190,7 @@ class DroneSimEnv(gym.Env):
 
 
     def get_state(self):
-        position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter, _, _ = dronesim.siminfo()
+        position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter, velocity_hunter, _ = dronesim.siminfo()
 
         orientation_hunter = [math.degrees(degree) for degree in orientation_hunter]
         orientation_target = [math.degrees(degree) for degree in orientation_target]
@@ -272,6 +277,7 @@ class DroneSimEnv(gym.Env):
         # define state
         state = np.concatenate([np.array([orientation_hunter[0] / self.max_roll_angle, orientation_hunter[1] / self.max_pitch_angle, orientation_hunter[2] / self.max_yaw_angle]).flatten(),
                                 np.array((thrust_hunter - self.min_absolute_thrust) / self.thrust_sensity + self.min_thrust).flatten(),
+                                np.array(velocity_hunter).flatten(),
                                 coordinate_state,
                                 distance_state,
                                 in_fov_state
