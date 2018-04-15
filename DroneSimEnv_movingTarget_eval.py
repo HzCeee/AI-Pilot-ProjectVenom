@@ -171,12 +171,12 @@ class DroneSimEnv(gym.Env):
         else:
             reward = -100
 
-        if self.distance > self.max_detect_distance or self.distance < self.min_detect_distance or self.iteration > self.max_iteration:
+        if self.distance > self.max_detect_distance or self.distance < 1 or self.iteration > self.max_iteration:
             done = True
             reward = 0
             self.episodes += 1
             self.iteration = 0
-            if self.distance < self.min_detect_distance: 
+            if self.distance < 1: 
                 reward = 200
                 reason = 1
             if self.distance > self.max_detect_distance:
@@ -317,7 +317,7 @@ class DroneSimEnv(gym.Env):
             distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5, 270, 180)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 15, 270, 180)
         
         self.init_pos_target = position_target
 
