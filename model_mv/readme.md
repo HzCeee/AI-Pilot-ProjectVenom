@@ -5,3 +5,8 @@ not check the area_ratio
 exp2:
 check area
 add one layer
+
+exp3:
+check area
+initialization
+encode velocity
