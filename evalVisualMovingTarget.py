@@ -87,7 +87,7 @@ with U.single_threaded_session() as sess:
         obs = env.reset()
 
         saver = tf.train.Saver()
-        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_mv/exp2/Exp5_mv_best')
+        saver.restore(tf.get_default_session(), '/home/projectvenom/Documents/AIPilot/AIPilot-ProjectVenom-master/model_mv/exp3/Exp5_mv_best')
 
         done = False
         step = 0
@@ -97,7 +97,7 @@ with U.single_threaded_session() as sess:
             # print("done: ",done)
             # print("distance: ",dis['distance'])
             
-            pos_hunter, ori_hunter, acc_hunter, pos_target, ori_target, acc_target, thrust = dronesim.siminfo()
+            pos_hunter, ori_hunter, acc_hunter, pos_target, ori_target, acc_target, thrust, _, _ = dronesim.siminfo()
 
             if step % 1 == 0:
                 renderer.render(pos_hunter, ori_hunter, pos_target, ori_target)
