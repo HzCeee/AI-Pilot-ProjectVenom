@@ -77,12 +77,14 @@ class DroneSimEnv(gym.Env):
         self.low_state = np.array(
             [self.min_roll, self.min_pitch, self.min_yaw, self.min_thrust]
             + [self.min_velocity_x, self.min_velocity_y, self.min_velocity_z]
+            + [self.min_roll, self.min_pitch, self.min_yaw]
             + self.queue_length * [self.min_relative_x, self.min_relative_y]
             + self.queue_length * [self.min_distance]
             )
         self.high_state = np.array(
             [self.max_roll, self.max_pitch, self.max_yaw, self.max_thrust] 
             + [self.max_velocity_x, self.max_velocity_y, self.max_velocity_z]
+            + [self.max_roll, self.max_pitch, self.max_yaw]
             + self.queue_length * [self.max_relative_x, self.max_relative_y]
             + self.queue_length * [self.max_distance]
             )
@@ -278,6 +280,7 @@ class DroneSimEnv(gym.Env):
         state = np.concatenate([np.array([orientation_hunter[0] / self.max_roll_angle, orientation_hunter[1] / self.max_pitch_angle, orientation_hunter[2] / self.max_yaw_angle]).flatten(),
                                 np.array((thrust_hunter - self.min_absolute_thrust) / self.thrust_sensity + self.min_thrust).flatten(),
                                 np.array(velocity_hunter).flatten(),
+                                np.array([orientation_target[0] / self.max_roll_angle, orientation_target[1] / self.max_pitch_angle, orientation_target[2] / self.max_yaw_angle]).flatten(),
                                 coordinate_state,
                                 distance_state,
                                 in_fov_state
@@ -297,7 +300,7 @@ class DroneSimEnv(gym.Env):
         orientation_hunter = [0.0, 0.0, 0.0] # roll, pitch, taw
 
         #the position of target is generated randomly and should not exceed the vision range of hunter
-        position_target = (np.array([5.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist() # x, y, z
+        position_target = (np.array([7.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist() # x, y, z
         orientation_target = [0.0, 0.0, 0.0] # roll, pitch, yaw
         self.roll_target, self.pitch_target, self.yaw_target, self.thrust_target = 0, 0, 0, 0
 
@@ -305,12 +308,12 @@ class DroneSimEnv(gym.Env):
         distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
         # invalid initialization
         while (not target_in_front or absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
-            position_target = (np.array([5.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist()
+            position_target = (np.array([7.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist()
             absolute_x, absolute_y, area_ratio, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, orientation_target) 
             distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 15, 180, 180)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5, 180, 180)
         
         self.init_pos_target = position_target
 
