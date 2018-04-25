@@ -14,6 +14,9 @@ for row in fileReader:
         average_success_rate.append(float(row['AI_success_rate'][:6]))
     average_return.append(float(row['AI_return'][:6]))
 
+if average_distance: print(min(average_distance))
+if average_success_rate: print(max(average_success_rate))
+
 plt.figure(1)
 plt.plot(average_distance)
 plt.xlabel('episodes/2000')
