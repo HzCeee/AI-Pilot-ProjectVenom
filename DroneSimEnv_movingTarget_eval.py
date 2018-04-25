@@ -181,7 +181,7 @@ class DroneSimEnv(gym.Env):
                 reason = 1
             if self.distance > self.max_detect_distance:
                 reason = 2
-            if self.iteration > 100000:
+            if self.iteration > self.max_iteration:
                 reason = 3
         
         if self.flag:

@@ -11,6 +11,7 @@ import numpy as np
 
 from collections import deque
 import dronesim
+import math
 # from matplotlib.pyplot as plt
 
 def actiongenerator(obs):
@@ -94,6 +95,8 @@ with U.single_threaded_session() as sess:
         obs = env.reset()
 
         position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter, velocity_hunter, _ = dronesim.siminfo()
+        orientation_hunter = [math.degrees(degree) for degree in orientation_hunter]
+        orientation_target = [math.degrees(degree) for degree in orientation_target]
         static_position_target = position_target
         static_orientation_target = orientation_target
 
@@ -110,8 +113,12 @@ with U.single_threaded_session() as sess:
             # print("done: ",done)
             # print("distance: ",dis['distance'])
 
-            if count < 5:
+            if count < 3:
                 position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter, velocity_hunter, _ = dronesim.siminfo()
+
+                orientation_hunter = [math.degrees(degree) for degree in orientation_hunter]
+                orientation_target = [math.degrees(degree) for degree in orientation_target]
+
                 absolute_x, absolute_y, area_ratio, target_in_front = dronesim.projection(position_hunter, orientation_hunter, static_position_target, static_orientation_target)
 
                 distance = np.linalg.norm(np.array(position_hunter) - np.array(static_position_target))
@@ -159,6 +166,10 @@ with U.single_threaded_session() as sess:
                 count = count + 1
             else:
                 position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter, velocity_hunter, _ = dronesim.siminfo()
+
+                orientation_hunter = [math.degrees(degree) for degree in orientation_hunter]
+                orientation_target = [math.degrees(degree) for degree in orientation_target]
+
                 static_position_target = position_target
                 static_orientation_target = orientation_target
 
@@ -179,6 +190,7 @@ with U.single_threaded_session() as sess:
                 in_fov_state = np.array(list(in_fov_queue))
 
                 # define state
+                # print(orientation_hunter)
                 static_state = np.concatenate([np.array([orientation_hunter[0] / 40, orientation_hunter[1] / 40, orientation_hunter[2] / 180]).flatten(),
                                         np.array((thrust_hunter - 4) / 6 - 1).flatten(),
                                         np.array(velocity_hunter).flatten(),
@@ -190,6 +202,12 @@ with U.single_threaded_session() as sess:
                 static_state = tuple(list(static_state))
 
                 count = 1
+            
+            # print('-------------')
+            # print(orientation_hunter)
+            # print(static_state)
+            # print(state)
+            # print('-------------')
 
             obs = static_state
             # obs = state
@@ -200,8 +218,8 @@ with U.single_threaded_session() as sess:
             if done:
                 # print('step: ', step)
                 # print('done')
-
-                reason[dis['reason']] += 1
+                
+                # reason[dis['reason']] += 1
 
                 if dis['distance'] <= 1:
                     success.append(1)
@@ -222,4 +240,4 @@ print('average step: ', sum(step_number)/len(step_number), len(step_number), np.
 print('----------------------')
 print('success rate: ', sum(success)/len(success))
 print('----------------------')
-print('result: (1 = success, 2 = max distance, 3 = max time)\n', reason)
+# print('result: (1 = success, 2 = max distance, 3 = max time)\n', reason)
