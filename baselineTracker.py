@@ -110,7 +110,7 @@ with U.single_threaded_session() as sess:
             # print("done: ",done)
             # print("distance: ",dis['distance'])
 
-            if count < 2:
+            if count < 5:
                 position_hunter, orientation_hunter, acc_hunter, position_target, orientation_target, acc_target, thrust_hunter, velocity_hunter, _ = dronesim.siminfo()
                 absolute_x, absolute_y, area_ratio, target_in_front = dronesim.projection(position_hunter, orientation_hunter, static_position_target, static_orientation_target)
 
@@ -173,6 +173,21 @@ with U.single_threaded_session() as sess:
                 coordinate_queue = deque(tmp_coord_queue)
                 distance_queue = deque(tmp_dist_queue)
                 in_fov_queue = deque(state[31:39])
+
+                coordinate_state = np.concatenate(list(coordinate_queue))
+                distance_state = np.concatenate(list(distance_queue))
+                in_fov_state = np.array(list(in_fov_queue))
+
+                # define state
+                static_state = np.concatenate([np.array([orientation_hunter[0] / 40, orientation_hunter[1] / 40, orientation_hunter[2] / 180]).flatten(),
+                                        np.array((thrust_hunter - 4) / 6 - 1).flatten(),
+                                        np.array(velocity_hunter).flatten(),
+                                        coordinate_state,
+                                        distance_state,
+                                        in_fov_state
+                                        ], 0)
+
+                static_state = tuple(list(static_state))
 
                 count = 1
 
