@@ -306,15 +306,11 @@ class DroneSimEnv(gym.Env):
         # invalid initialization
         while (not target_in_front or absolute_x > self.max_absolute_x or absolute_x < self.min_absolute_x or absolute_y > self.max_absolute_y or absolute_y < self.min_absolute_y or distance > self.max_initial_distance or distance < self.min_initial_distance):
             position_target = (np.array([5.0, 0.0, 10.0]) + np.random.normal(0, 5)).tolist()
-
-            # orientation_hunter = np.random.rand(3)
-            # orientation_target = np.random.rand(3)
-
             absolute_x, absolute_y, area_ratio, target_in_front = dronesim.projection(position_hunter, orientation_hunter, position_target, orientation_target) 
             distance = np.linalg.norm(np.array(position_hunter) - np.array(position_target))
 
         dronesim.siminit(np.squeeze(np.asarray(position_hunter)),np.squeeze(np.asarray(orientation_hunter)), \
-                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5, 180, 180)
+                         np.squeeze(np.asarray(position_target)),np.squeeze(np.asarray(orientation_target)), 20, 5, 270, 180)
         
         self.init_pos_target = position_target
 
